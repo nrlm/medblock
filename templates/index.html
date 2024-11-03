@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BPJS Blockchain System</title>
+    <style>
+        /* Gaya dasar halaman */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-top: 20px;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        /* Container utama */
+        .container {
+            max-width: 800px;
+            width: 90%;
+            background-color: #fff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Gaya form untuk tambah transaksi */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            color: #fff;
+            background-color: #3498db;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Gaya untuk menampilkan data blockchain dan transaksi */
+        .data-section {
+            margin-top: 20px;
+        }
+
+        h3 {
+            color: #2c3e50;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+
+        pre {
+            background-color: #f7f7f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.9em;
+        }
+    </style>
+    <script>
+        async function getChain() {
+            try {
+                const response = await fetch('/chain');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                document.getElementById('chain').textContent = JSON.stringify(data.chain, null, 2);
+
+                // Gabungkan transaksi dalam blockchain dan pending
+                const transactionsList = [];
+                data.chain.forEach(block => {
+                    block.transactions.forEach(tx => transactionsList.push(tx));
+                });
+                data.pending_transactions.forEach(tx => transactionsList.push(tx));
+
+                document.getElementById('transactions').textContent = JSON.stringify(transactionsList.slice(0, 10), null, 2);
+            } catch (error) {
+                console.error("Error fetching chain data:", error);
+            }
+        }
+
+        async function addTransaction() {
+            const transaction = {
+                sender: document.getElementById('sender').value,
+                receiver: document.getElementById('receiver').value,
+                amount: parseInt(document.getElementById('amount').value),
+                type: document.getElementById('type').value
+            };
+
+            try {
+                const response = await fetch('/transactions/new', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(transaction)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                console.log("Transaction added successfully:", transaction);
+                getChain();
+            } catch (error) {
+                console.error("Error adding transaction:", error);
+            }
+        }
+    </script>
+</head>
+<body onload="getChain()">
+    <h1>BPJS Blockchain System</h1>
+    
+    <div class="container">
+        <div class="form-group">
+            <h3>Add Transaction</h3>
+            <label for="sender">Sender</label>
+            <input id="sender" type="text" placeholder="Sender">
+
+            <label for="receiver">Receiver</label>
+            <input id="receiver" type="text" placeholder="Receiver">
+
+            <label for="amount">Amount</label>
+            <input id="amount" type="text" placeholder="Amount">
+
+            <label for="type">Type</label>
+            <input id="type" type="text" placeholder="Type">
+
+            <button onclick="addTransaction()">Add Transaction</button>
+        </div>
+
+        <div class="data-section">
+            <h3>Blockchain Data</h3>
+            <pre id="chain">Loading blockchain data...</pre>
+        </div>
+
+        <div class="data-section">
+            <h3>Latest Transactions (Including Pending)</h3>
+            <pre id="transactions">Loading transactions...</pre>
+        </div>
+    </div>
+</body>
+</html>

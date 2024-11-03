@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Last Ten Transactions</title>
+    <script>
+        // Fungsi untuk mendapatkan dan menampilkan sepuluh transaksi terakhir
+        async function getLastTenTransactions() {
+    try {
+        const response = await fetch('/chain');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("Data blockchain:", data); // Debugging
+
+        // Menggabungkan transaksi yang sudah dikonfirmasi dan yang masih pending
+        const transactionsList = [];
+        for (let i = data.chain.length - 1; i >= 0 && transactionsList.length < 10; i--) {
+            const block = data.chain[i];
+            for (let j = block.transactions.length - 1; j >= 0 && transactionsList.length < 10; j--) {
+                transactionsList.push(block.transactions[j]);
+            }
+        }
+
+        // Menambahkan transaksi pending
+        data.pending_transactions.forEach(tx => {
+            if (transactionsList.length < 10) {
+                transactionsList.push(tx);
+            }
+        });
+
+        // Menampilkan transaksi terakhir atau pesan jika tidak ada transaksi
+        if (transactionsList.length > 0) {
+            document.getElementById('last-transactions').textContent = JSON.stringify(transactionsList, null, 2);
+        } else {
+            document.getElementById('last-transactions').textContent = "No transactions in the blockchain.";
+        }
+    } catch (error) {
+        console.error("Error fetching transactions:", error);
+    }
+}
+
+    </script>
+</head>
+<body onload="getLastTenTransactions()">
+    <h1>Last Ten Transactions</h1>
+    <div>
+        <h3>Transactions</h3>
+        <pre id="last-transactions">Loading...</pre>
+    </div>
+</body>
+</html>
